@@ -20,6 +20,7 @@ export type CreateExpensePayload = {
   category: string;
   description?: string;
   date: string;
+  user: string;
 };
 
 export type CategorySummary = {
@@ -42,16 +43,21 @@ export async function createExpense(
   });
 }
 
-export async function fetchSummary(signal?: AbortSignal): Promise<SummaryResponse> {
-  return httpGet<SummaryResponse>("/expenses/summary", signal);
+export async function fetchSummary(user: string, signal?: AbortSignal): Promise<SummaryResponse> {
+  const query = new URLSearchParams();
+  if (user) query.set("user", user);
+  const qs = query.toString();
+  return httpGet<SummaryResponse>(`/expenses/summary${qs ? `?${qs}` : ""}`, signal);
 }
 
 export async function fetchExpenses(params?: {
   category?: string;
   sort?: string;
+  user?: string;
   signal?: AbortSignal;
 }): Promise<ExpensesResponse> {
   const query = new URLSearchParams();
+  if (params?.user) query.set("user", params.user);
   if (params?.category) query.set("category", params.category);
   if (params?.sort) query.set("sort", params.sort);
   const qs = query.toString();

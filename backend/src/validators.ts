@@ -3,6 +3,7 @@ import { parsePaise } from "./money.js";
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_DESCRIPTION_LENGTH = 200;
 const MAX_CATEGORY_LENGTH = 50;
+const MAX_USER_LENGTH = 50;
 
 export type ValidationError = {
   code: "VALIDATION_ERROR";
@@ -15,6 +16,7 @@ export type ValidatedExpense = {
   category: string;
   description: string;
   date: string;
+  user: string;
 };
 
 export function validateExpenseBody(body: unknown): ValidatedExpense | ValidationError {
@@ -82,6 +84,17 @@ export function validateExpenseBody(body: unknown): ValidatedExpense | Validatio
     }
   }
 
+  // user
+  if (b.user === undefined || b.user === null || b.user === "") {
+    fields.user = "user is required";
+  } else if (typeof b.user !== "string") {
+    fields.user = "user must be a string";
+  } else if (b.user.trim().length === 0) {
+    fields.user = "user must not be blank";
+  } else if (b.user.trim().length > MAX_USER_LENGTH) {
+    fields.user = `user must be at most ${MAX_USER_LENGTH} characters`;
+  }
+
   if (Object.keys(fields).length > 0) {
     return {
       code: "VALIDATION_ERROR",
@@ -95,5 +108,6 @@ export function validateExpenseBody(body: unknown): ValidatedExpense | Validatio
     category: (b.category as string).trim(),
     description: typeof b.description === "string" ? b.description : "",
     date: b.date as string,
+    user: (b.user as string).trim(),
   };
 }

@@ -41,7 +41,13 @@ async function parseErrorBody(res: Response): Promise<HttpError> {
 }
 
 export async function httpGet<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, { signal });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { signal });
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    throw new HttpError(0, "NETWORK_ERROR", "Network request failed. Check your connection.");
+  }
   if (!res.ok) throw await parseErrorBody(res);
   return (await res.json()) as T;
 }
@@ -51,14 +57,20 @@ export async function httpPost<T>(
   body: unknown,
   headers?: Record<string, string>,
 ): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    throw new HttpError(0, "NETWORK_ERROR", "Network request failed. Check your connection.");
+  }
   if (!res.ok) throw await parseErrorBody(res);
   return (await res.json()) as T;
 }

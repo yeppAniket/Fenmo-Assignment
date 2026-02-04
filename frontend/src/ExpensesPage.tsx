@@ -9,7 +9,12 @@ import { FilterSortControls } from "./components/FilterSortControls.tsx";
 import { PendingBanner } from "./components/PendingBanner.tsx";
 import { TotalDisplay } from "./components/TotalDisplay.tsx";
 
-export function ExpensesPage() {
+type Props = {
+  user: string;
+  onLogout: () => void;
+};
+
+export function ExpensesPage({ user, onLogout }: Props) {
   const [items, setItems] = useState<Expense[]>([]);
   const [totalPaise, setTotalPaise] = useState(0);
   const [count, setCount] = useState(0);
@@ -27,14 +32,14 @@ export function ExpensesPage() {
   const [summaryGrandTotal, setSummaryGrandTotal] = useState(0);
 
   const loadSummary = useCallback(() => {
-    fetchSummary()
+    fetchSummary(user)
       .then((data) => {
         setSummaryItems(data.categories);
         setSummaryGrandTotal(data.grand_total_paise);
         setCategories(data.categories.map((c) => c.category).sort());
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => { /* summary is non-critical; expenses list still works */ });
+  }, [user]);
 
   // Fetch summary on mount
   useEffect(() => {
@@ -47,6 +52,7 @@ export function ExpensesPage() {
       setError(null);
 
       fetchExpenses({
+        user,
         category: category || undefined,
         sort,
         signal,
@@ -64,7 +70,7 @@ export function ExpensesPage() {
         })
         .finally(() => setLoading(false));
     },
-    [category, sort],
+    [user, category, sort],
   );
 
   useEffect(() => {
@@ -91,7 +97,10 @@ export function ExpensesPage() {
             <span className="app-header-logo">&#8377;</span>
             Fenmo
           </h1>
-          <span className="app-header-subtitle">Track your expenses</span>
+          <div className="app-header-user">
+            <span className="user-badge">{user}</span>
+            <button className="btn-logout" onClick={onLogout}>Switch</button>
+          </div>
         </div>
       </header>
 
@@ -104,7 +113,7 @@ export function ExpensesPage() {
 
         <PendingBanner onResolved={handleCreated} />
 
-        <ExpenseForm onCreated={handleCreated} />
+        <ExpenseForm user={user} onCreated={handleCreated} />
 
         <FilterSortControls
           category={category}

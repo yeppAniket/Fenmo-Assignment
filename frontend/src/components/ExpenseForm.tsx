@@ -5,6 +5,7 @@ import { savePending, clearPending } from "../pendingStorage.ts";
 import { Input, Button, Banner } from "../ui/index.ts";
 
 type Props = {
+  user: string;
   onCreated: () => void;
 };
 
@@ -12,7 +13,7 @@ function todayString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function ExpenseForm({ onCreated }: Props) {
+export function ExpenseForm({ user, onCreated }: Props) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -51,6 +52,7 @@ export function ExpenseForm({ onCreated }: Props) {
       category: category.trim(),
       description: description.trim() || undefined,
       date,
+      user,
     };
     const key = crypto.randomUUID();
 

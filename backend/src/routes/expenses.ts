@@ -5,8 +5,8 @@ import { validateExpenseBody } from "../validators.js";
 
 export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
   const insertStmt = db.prepare(`
-    INSERT INTO expenses (amount_paise, category, description, date, created_at, idempotency_key)
-    VALUES (@amount_paise, @category, @description, @date, @created_at, @idempotency_key)
+    INSERT INTO expenses (amount_paise, category, description, date, created_at, idempotency_key, user)
+    VALUES (@amount_paise, @category, @description, @date, @created_at, @idempotency_key, @user)
   `);
 
   const findByKeyStmt = db.prepare(`
@@ -16,11 +16,17 @@ export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
   app.get("/expenses", async (request, reply) => {
     const query = request.query as Record<string, string | undefined>;
     const category = query.category?.trim() || null;
+    const user = query.user?.trim() || null;
     const sort = query.sort;
 
     // Build query with parameterized WHERE clause
     const conditions: string[] = [];
     const params: unknown[] = [];
+
+    if (user) {
+      conditions.push("user = ?");
+      params.push(user);
+    }
 
     if (category) {
       conditions.push("category = ?");
@@ -29,11 +35,12 @@ export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    // Default sort: date DESC, created_at DESC
-    let orderBy = "date DESC, created_at DESC";
-    if (sort === "date_asc") {
-      orderBy = "date ASC, created_at ASC";
-    }
+    // Whitelist valid sort orders to avoid any risk of SQL injection
+    const SORT_OPTIONS: Record<string, string> = {
+      date_desc: "date DESC, created_at DESC",
+      date_asc: "date ASC, created_at ASC",
+    };
+    const orderBy = SORT_OPTIONS[sort ?? "date_desc"] ?? SORT_OPTIONS.date_desc;
 
     const rows = db.prepare(
       `SELECT * FROM expenses ${where} ORDER BY ${orderBy}`
@@ -51,11 +58,17 @@ export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
   });
 
   // Summary: total per category
-  app.get("/expenses/summary", async () => {
+  app.get("/expenses/summary", async (request) => {
+    const query = request.query as Record<string, string | undefined>;
+    const user = query.user?.trim() || null;
+
+    const where = user ? "WHERE user = ?" : "";
+    const params = user ? [user] : [];
+
     const rows = db.prepare(
       `SELECT category, COALESCE(SUM(amount_paise), 0) as total_paise, COUNT(*) as count
-       FROM expenses GROUP BY category ORDER BY total_paise DESC`
-    ).all() as { category: string; total_paise: number; count: number }[];
+       FROM expenses ${where} GROUP BY category ORDER BY total_paise DESC`
+    ).all(...params) as { category: string; total_paise: number; count: number }[];
 
     const grandTotal = rows.reduce((sum, r) => sum + r.total_paise, 0);
 
@@ -91,6 +104,7 @@ export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
         date: result.date,
         created_at: now,
         idempotency_key: idempotencyKey,
+        user: result.user,
       });
 
       const inserted = findByKeyStmt.get(idempotencyKey) as ExpenseRow;

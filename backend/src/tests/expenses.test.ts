@@ -21,6 +21,7 @@ describe("POST /expenses", () => {
     category: "Food",
     description: "Lunch",
     date: "2025-03-15",
+    user: "alice",
   };
 
   it("creates an expense and returns 201", async () => {
@@ -184,12 +185,24 @@ describe("POST /expenses", () => {
     expect(res.statusCode).toBe(201);
     expect(res.json().amount_paise).toBe(20000);
   });
+
+  it("returns 400 for missing user", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/expenses",
+      headers: { "idempotency-key": "key-nouser" },
+      payload: { amount: "10.00", category: "Food", date: "2025-03-15" },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.fields.user).toBeDefined();
+  });
 });
 
 // --- Helper to seed expenses ---
 async function seed(
   app: FastifyInstance,
-  items: { amount: string; category: string; date: string; key: string; description?: string }[]
+  items: { amount: string; category: string; date: string; key: string; description?: string; user?: string }[]
 ) {
   for (const item of items) {
     await app.inject({
@@ -201,6 +214,7 @@ async function seed(
         category: item.category,
         date: item.date,
         description: item.description ?? "",
+        user: item.user ?? "testuser",
       },
     });
   }
@@ -327,6 +341,23 @@ describe("GET /expenses", () => {
     expect(filteredBody.total_paise).toBe(filteredSum);
   });
 
+  it("filters by user", async () => {
+    await seed(app, [
+      { amount: "100.00", category: "Food", date: "2025-03-10", key: "u1", user: "alice" },
+      { amount: "200.00", category: "Food", date: "2025-03-11", key: "u2", user: "bob" },
+      { amount: "50.00", category: "Transport", date: "2025-03-12", key: "u3", user: "alice" },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/expenses?user=alice",
+    });
+
+    const body = res.json();
+    expect(body.count).toBe(2);
+    expect(body.total_paise).toBe(15000); // 10000 + 5000
+  });
+
   it("filter + sort work together", async () => {
     await seed(app, [
       { amount: "10.00", category: "Food", date: "2025-03-01", key: "fs1" },
@@ -369,6 +400,19 @@ describe("GET /expenses/summary", () => {
     expect(body.categories[1].count).toBe(2);
     // Grand total
     expect(body.grand_total_paise).toBe(35000);
+  });
+
+  it("filters summary by user", async () => {
+    await seed(app, [
+      { amount: "100.00", category: "Food", date: "2025-03-10", key: "su1", user: "alice" },
+      { amount: "200.00", category: "Transport", date: "2025-03-11", key: "su2", user: "bob" },
+    ]);
+
+    const res = await app.inject({ method: "GET", url: "/expenses/summary?user=alice" });
+    const body = res.json();
+    expect(body.categories).toHaveLength(1);
+    expect(body.categories[0].category).toBe("Food");
+    expect(body.grand_total_paise).toBe(10000);
   });
 
   it("returns empty categories when no expenses exist", async () => {
