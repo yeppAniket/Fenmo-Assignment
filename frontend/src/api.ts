@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 export type Expense = {
   id: number;
@@ -56,11 +56,13 @@ export async function fetchExpenses(params?: {
   sort?: string;
   signal?: AbortSignal;
 }): Promise<ExpensesResponse> {
-  const url = new URL(`${BASE_URL}/expenses`);
-  if (params?.category) url.searchParams.set("category", params.category);
-  if (params?.sort) url.searchParams.set("sort", params.sort);
+  const query = new URLSearchParams();
+  if (params?.category) query.set("category", params.category);
+  if (params?.sort) query.set("sort", params.sort);
+  const qs = query.toString();
+  const url = `${BASE_URL}/expenses${qs ? `?${qs}` : ""}`;
 
-  const res = await fetch(url.toString(), { signal: params?.signal });
+  const res = await fetch(url, { signal: params?.signal });
 
   if (!res.ok) {
     const body = (await res.json()) as ApiError;

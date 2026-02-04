@@ -17,7 +17,8 @@ CREATE INDEX IF NOT EXISTS expenses_category_idx ON expenses(category);
 `;
 
 export function createDb(dbPath?: string): Database.Database {
-  const resolvedPath = dbPath ?? path.join(process.cwd(), "expenses.db");
+  const defaultPath = process.env.DB_PATH ?? path.join(process.cwd(), "expenses.db");
+  const resolvedPath = dbPath ?? defaultPath;
   const db = new Database(resolvedPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
