@@ -261,3 +261,62 @@ body {
   border-color: #4f46e5;
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
 }
+
+/* Pending Submission Banner */
+.pending-banner {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.pending-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.pending-banner-text strong {
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
+.pending-banner-text span {
+  color: #78716c;
+  font-size: 0.85rem;
+}
+
+.pending-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pending-banner-actions .retry-btn {
+  background: #b45309;
+}
+
+.pending-banner-actions .retry-btn:hover {
+  background: #92400e;
+}
+
+.dismiss-btn {
+  padding: 0.3rem 0.75rem;
+  background: transparent;
+  color: #78716c;
+  border: 1px solid #d6d3d1;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.dismiss-btn:hover {
+  background: #f5f5f4;
+}
+
+.pending-banner-error {
+  margin-top: 0.5rem;
+  color: #991b1b;
+  font-size: 0.85rem;
+}

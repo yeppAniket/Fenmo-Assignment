@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { createExpense } from "../api.ts";
 import type { CreateExpensePayload } from "../api.ts";
+import { savePending, clearPending } from "../pendingStorage.ts";
 
 type Props = {
   onCreated: () => void;
@@ -53,6 +54,7 @@ export function ExpenseForm({ onCreated }: Props) {
     const key = crypto.randomUUID();
 
     pendingRef.current = { key, payload };
+    savePending(key, payload);
     await doSubmit(key, payload);
   }
 
@@ -69,6 +71,7 @@ export function ExpenseForm({ onCreated }: Props) {
       await createExpense(payload, key);
       // Success: clear form and pending state
       pendingRef.current = null;
+      clearPending();
       setAmount("");
       setCategory("");
       setDescription("");

@@ -4,6 +4,7 @@ import type { Expense } from "./api.ts";
 import { ExpenseForm } from "./components/ExpenseForm.tsx";
 import { ExpenseTable } from "./components/ExpenseTable.tsx";
 import { FilterSortControls } from "./components/FilterSortControls.tsx";
+import { PendingBanner } from "./components/PendingBanner.tsx";
 import { TotalDisplay } from "./components/TotalDisplay.tsx";
 
 export function ExpensesPage() {
@@ -82,6 +83,8 @@ export function ExpensesPage() {
   return (
     <div className="expenses-page">
       <h1>Expense Tracker</h1>
+
+      <PendingBanner onResolved={handleCreated} />
 
       <ExpenseForm onCreated={handleCreated} />
 
