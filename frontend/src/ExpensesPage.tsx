@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchExpenses } from "./api.ts";
-import type { Expense } from "./api.ts";
+import { fetchExpenses, fetchSummary } from "./api.ts";
+import type { Expense, CategorySummary as CategorySummaryItem } from "./api.ts";
+import { CategorySummary } from "./components/CategorySummary.tsx";
 import { ExpenseForm } from "./components/ExpenseForm.tsx";
 import { ExpenseTable } from "./components/ExpenseTable.tsx";
 import { FilterSortControls } from "./components/FilterSortControls.tsx";
@@ -20,17 +21,24 @@ export function ExpensesPage() {
   // Track all known categories (fetched without filter)
   const [categories, setCategories] = useState<string[]>([]);
 
-  // Fetch full list once to populate category dropdown
-  useEffect(() => {
-    fetchExpenses()
+  // Category summary data
+  const [summaryItems, setSummaryItems] = useState<CategorySummaryItem[]>([]);
+  const [summaryGrandTotal, setSummaryGrandTotal] = useState(0);
+
+  const loadSummary = useCallback(() => {
+    fetchSummary()
       .then((data) => {
-        const cats = [...new Set(data.items.map((e) => e.category))].sort();
-        setCategories(cats);
+        setSummaryItems(data.categories);
+        setSummaryGrandTotal(data.grand_total_paise);
+        setCategories(data.categories.map((c) => c.category).sort());
       })
-      .catch(() => {
-        // Silently fail — dropdown just won't have options
-      });
+      .catch(() => {});
   }, []);
+
+  // Fetch summary on mount
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
 
   const loadExpenses = useCallback(
     (signal?: AbortSignal) => {
@@ -65,15 +73,9 @@ export function ExpensesPage() {
   }, [loadExpenses]);
 
   const handleCreated = useCallback(() => {
-    // Refresh categories too
-    fetchExpenses()
-      .then((data) => {
-        const cats = [...new Set(data.items.map((e) => e.category))].sort();
-        setCategories(cats);
-      })
-      .catch(() => {});
+    loadSummary();
     loadExpenses();
-  }, [loadExpenses]);
+  }, [loadExpenses, loadSummary]);
 
   // Fallback: compute total from items if backend didn't provide it
   const displayTotal =
@@ -108,6 +110,7 @@ export function ExpensesPage() {
       {!loading && !error && (
         <>
           <TotalDisplay totalPaise={displayTotal} count={count} />
+          <CategorySummary categories={summaryItems} grandTotal={summaryGrandTotal} />
           <ExpenseTable items={items} />
         </>
       )}

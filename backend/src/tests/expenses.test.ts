@@ -345,3 +345,37 @@ describe("GET /expenses", () => {
     expect(body.items[1].date).toBe("2025-03-10");
   });
 });
+
+describe("GET /expenses/summary", () => {
+  it("returns per-category totals sorted by amount descending", async () => {
+    await seed(app, [
+      { amount: "100.00", category: "Food", date: "2025-03-10", key: "sm1" },
+      { amount: "50.00", category: "Food", date: "2025-03-11", key: "sm2" },
+      { amount: "200.00", category: "Transport", date: "2025-03-12", key: "sm3" },
+    ]);
+
+    const res = await app.inject({ method: "GET", url: "/expenses/summary" });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.categories).toHaveLength(2);
+    // Transport (20000) should be first (highest)
+    expect(body.categories[0].category).toBe("Transport");
+    expect(body.categories[0].total_paise).toBe(20000);
+    expect(body.categories[0].count).toBe(1);
+    // Food (15000) second
+    expect(body.categories[1].category).toBe("Food");
+    expect(body.categories[1].total_paise).toBe(15000);
+    expect(body.categories[1].count).toBe(2);
+    // Grand total
+    expect(body.grand_total_paise).toBe(35000);
+  });
+
+  it("returns empty categories when no expenses exist", async () => {
+    const res = await app.inject({ method: "GET", url: "/expenses/summary" });
+
+    const body = res.json();
+    expect(body.categories).toHaveLength(0);
+    expect(body.grand_total_paise).toBe(0);
+  });
+});

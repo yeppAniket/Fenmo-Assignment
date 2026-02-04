@@ -51,6 +51,28 @@ export async function createExpense(
   return (await res.json()) as Expense;
 }
 
+export type CategorySummary = {
+  category: string;
+  total_paise: number;
+  count: number;
+};
+
+export type SummaryResponse = {
+  categories: CategorySummary[];
+  grand_total_paise: number;
+};
+
+export async function fetchSummary(signal?: AbortSignal): Promise<SummaryResponse> {
+  const res = await fetch(`${BASE_URL}/expenses/summary`, { signal });
+
+  if (!res.ok) {
+    const body = (await res.json()) as ApiError;
+    throw new Error(body.error?.message ?? `Request failed: ${res.status}`);
+  }
+
+  return (await res.json()) as SummaryResponse;
+}
+
 export async function fetchExpenses(params?: {
   category?: string;
   sort?: string;

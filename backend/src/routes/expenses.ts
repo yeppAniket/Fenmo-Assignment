@@ -50,6 +50,18 @@ export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
     };
   });
 
+  // Summary: total per category
+  app.get("/expenses/summary", async () => {
+    const rows = db.prepare(
+      `SELECT category, COALESCE(SUM(amount_paise), 0) as total_paise, COUNT(*) as count
+       FROM expenses GROUP BY category ORDER BY total_paise DESC`
+    ).all() as { category: string; total_paise: number; count: number }[];
+
+    const grandTotal = rows.reduce((sum, r) => sum + r.total_paise, 0);
+
+    return { categories: rows, grand_total_paise: grandTotal };
+  });
+
   app.post("/expenses", async (request, reply) => {
     // 1. Require Idempotency-Key header
     const idempotencyKey = request.headers["idempotency-key"];
