@@ -75,6 +75,14 @@ export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
     return { categories: rows, grand_total_paise: grandTotal };
   });
 
+  // List distinct users
+  app.get("/users", async () => {
+    const rows = db.prepare(
+      `SELECT DISTINCT user FROM expenses WHERE user != '' ORDER BY user`
+    ).all() as { user: string }[];
+    return { users: rows.map((r) => r.user) };
+  });
+
   app.post("/expenses", async (request, reply) => {
     // 1. Require Idempotency-Key header
     const idempotencyKey = request.headers["idempotency-key"];

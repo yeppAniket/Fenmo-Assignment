@@ -149,6 +149,16 @@ Idempotency-Key: <uuid>
 }
 ```
 
+### GET /users
+
+Returns distinct usernames that have created expenses.
+
+```json
+{
+  "users": ["alice", "bob"]
+}
+```
+
 ### GET /health
 
 ```
