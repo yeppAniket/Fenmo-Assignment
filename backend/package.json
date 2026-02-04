@@ -1,0 +1,27 @@
+{
+  "name": "expense-tracker-backend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint src/",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "better-sqlite3": "^11.7.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.12.0",
+    "typescript": "^5.7.3",
+    "tsx": "^4.19.2",
+    "eslint": "^9.19.0",
+    "@eslint/js": "^9.19.0",
+    "typescript-eslint": "^8.22.0",
+    "vitest": "^3.0.4"
+  }
+}
