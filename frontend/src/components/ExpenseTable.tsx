@@ -11,25 +11,28 @@ export function ExpenseTable({ items }: { items: Expense[] }) {
   }
 
   return (
-    <table className="expense-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Description</th>
-          <th className="amount-col">Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((e) => (
-          <tr key={e.id}>
-            <td>{e.date}</td>
-            <td>{e.category}</td>
-            <td>{e.description || "—"}</td>
-            <td className="amount-col">{formatPaise(e.amount_paise)}</td>
+    <div className="expense-table-wrapper">
+      <table className="expense-table">
+        <caption className="sr-only">List of expenses</caption>
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Category</th>
+            <th scope="col">Description</th>
+            <th scope="col" className="amount-col">Amount</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {items.map((e) => (
+            <tr key={e.id}>
+              <td>{e.date}</td>
+              <td>{e.category}</td>
+              <td>{e.description || "—"}</td>
+              <td className="amount-col">{formatPaise(e.amount_paise)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

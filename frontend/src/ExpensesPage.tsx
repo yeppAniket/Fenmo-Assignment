@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchExpenses, fetchSummary } from "./api.ts";
 import type { Expense, CategorySummary as CategorySummaryItem } from "./api.ts";
+import { Banner, Button } from "./ui/index.ts";
 import { CategorySummary } from "./components/CategorySummary.tsx";
 import { ExpenseForm } from "./components/ExpenseForm.tsx";
 import { ExpenseTable } from "./components/ExpenseTable.tsx";
@@ -86,6 +87,12 @@ export function ExpensesPage() {
     <div className="expenses-page">
       <h1>Expense Tracker</h1>
 
+      {/* Screen-reader announcements for loading/error state changes */}
+      <div aria-live="polite" className="sr-only">
+        {loading ? "Loading expenses" : ""}
+        {error ? `Error: ${error}` : ""}
+      </div>
+
       <PendingBanner onResolved={handleCreated} />
 
       <ExpenseForm onCreated={handleCreated} />
@@ -101,10 +108,12 @@ export function ExpensesPage() {
       {loading && <p className="status-message">Loading expenses...</p>}
 
       {error && (
-        <div className="error-banner">
-          <p>{error}</p>
-          <button onClick={() => loadExpenses()}>Retry</button>
-        </div>
+        <Banner
+          variant="error"
+          action={<Button variant="danger" onClick={() => loadExpenses()}>Retry</Button>}
+        >
+          {error}
+        </Banner>
       )}
 
       {!loading && !error && (

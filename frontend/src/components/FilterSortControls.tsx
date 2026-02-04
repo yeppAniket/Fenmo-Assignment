@@ -1,3 +1,5 @@
+import { Select } from "../ui/index.ts";
+
 type Props = {
   category: string;
   onCategoryChange: (value: string) => void;
@@ -13,30 +15,30 @@ export function FilterSortControls({
   onSortChange,
   categories,
 }: Props) {
+  const categoryOptions = [
+    { value: "", label: "All Categories" },
+    ...categories.map((cat) => ({ value: cat, label: cat })),
+  ];
+
+  const sortOptions = [
+    { value: "date_desc", label: "Date (Newest first)" },
+    { value: "date_asc", label: "Date (Oldest first)" },
+  ];
+
   return (
     <div className="filter-sort-controls">
-      <label>
-        <span>Category</span>
-        <select
-          value={category}
-          onChange={(e) => onCategoryChange(e.target.value)}
-        >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label>
-        <span>Sort by</span>
-        <select value={sort} onChange={(e) => onSortChange(e.target.value)}>
-          <option value="date_desc">Date (Newest first)</option>
-          <option value="date_asc">Date (Oldest first)</option>
-        </select>
-      </label>
+      <Select
+        label="Category"
+        options={categoryOptions}
+        value={category}
+        onChange={(e) => onCategoryChange(e.target.value)}
+      />
+      <Select
+        label="Sort by"
+        options={sortOptions}
+        value={sort}
+        onChange={(e) => onSortChange(e.target.value)}
+      />
     </div>
   );
 }

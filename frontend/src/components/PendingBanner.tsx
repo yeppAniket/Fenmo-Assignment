@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createExpense } from "../api.ts";
 import { loadPending, clearPending } from "../pendingStorage.ts";
 import type { PendingExpense } from "../pendingStorage.ts";
+import { Button, Banner } from "../ui/index.ts";
 
 type Props = {
   onResolved: () => void;
@@ -41,7 +42,19 @@ export function PendingBanner({ onResolved }: Props) {
   }
 
   return (
-    <div className="pending-banner">
+    <Banner
+      variant="warning"
+      action={
+        <div className="pending-banner-actions">
+          <Button variant="danger" onClick={handleRetry} loading={retrying}>
+            {retrying ? "Retrying..." : "Retry"}
+          </Button>
+          <Button variant="ghost" onClick={handleDismiss} disabled={retrying}>
+            Dismiss
+          </Button>
+        </div>
+      }
+    >
       <div className="pending-banner-text">
         <strong>Unfinished submission</strong>
         <span>
@@ -49,23 +62,7 @@ export function PendingBanner({ onResolved }: Props) {
           {pending.payload.date}
         </span>
       </div>
-      <div className="pending-banner-actions">
-        <button
-          className="retry-btn"
-          onClick={handleRetry}
-          disabled={retrying}
-        >
-          {retrying ? "Retrying..." : "Retry"}
-        </button>
-        <button
-          className="dismiss-btn"
-          onClick={handleDismiss}
-          disabled={retrying}
-        >
-          Dismiss
-        </button>
-      </div>
-      {error && <p className="pending-banner-error">{error}</p>}
-    </div>
+      {error && <p className="pending-banner-error" role="alert">{error}</p>}
+    </Banner>
   );
 }

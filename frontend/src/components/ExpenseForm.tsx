@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { createExpense } from "../api.ts";
 import type { CreateExpensePayload } from "../api.ts";
 import { savePending, clearPending } from "../pendingStorage.ts";
+import { Input, Button, Banner } from "../ui/index.ts";
 
 type Props = {
   onCreated: () => void;
@@ -85,69 +86,71 @@ export function ExpenseForm({ onCreated }: Props) {
   }
 
   return (
-    <form className="expense-form" onSubmit={handleSubmit}>
+    <form className="expense-form" onSubmit={handleSubmit} noValidate>
       <div className="form-row">
-        <label>
-          <span>Amount</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            disabled={submitting}
-          />
-        </label>
+        <Input
+          id="expense-amount"
+          label="Amount"
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          disabled={submitting}
+          required
+        />
 
-        <label>
-          <span>Category</span>
-          <input
-            type="text"
-            placeholder="e.g. Food"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            disabled={submitting}
-          />
-        </label>
+        <Input
+          id="expense-category"
+          label="Category"
+          type="text"
+          placeholder="e.g. Food"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          disabled={submitting}
+          required
+        />
 
-        <label>
-          <span>Date</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            disabled={submitting}
-          />
-        </label>
+        <Input
+          id="expense-date"
+          label="Date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          disabled={submitting}
+          required
+        />
       </div>
 
       <div className="form-row">
-        <label className="description-label">
-          <span>Description</span>
-          <input
-            type="text"
-            placeholder="Optional"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={submitting}
-            maxLength={200}
-          />
-        </label>
+        <Input
+          id="expense-description"
+          label="Description"
+          className="description-label"
+          type="text"
+          placeholder="Optional"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={submitting}
+          maxLength={200}
+        />
 
-        <button type="submit" className="submit-btn" disabled={submitting}>
+        <Button type="submit" loading={submitting}>
           {submitting ? "Saving..." : "Add Expense"}
-        </button>
+        </Button>
       </div>
 
       {error && (
-        <div className="form-error">
-          <span>{error}</span>
-          {pendingRef.current && !submitting && (
-            <button type="button" className="retry-btn" onClick={handleRetry}>
-              Retry
-            </button>
-          )}
-        </div>
+        <Banner
+          variant="error"
+          action={
+            pendingRef.current && !submitting ? (
+              <Button variant="danger" onClick={handleRetry}>Retry</Button>
+            ) : undefined
+          }
+        >
+          {error}
+        </Banner>
       )}
     </form>
   );

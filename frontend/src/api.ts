@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+import { httpGet, httpPost } from "./httpClient.ts";
 
 export type Expense = {
   id: number;
@@ -15,41 +15,12 @@ export type ExpensesResponse = {
   total_paise: number;
 };
 
-export type ApiError = {
-  error: {
-    code: string;
-    message: string;
-    fields?: Record<string, string>;
-  };
-};
-
 export type CreateExpensePayload = {
   amount: string;
   category: string;
   description?: string;
   date: string;
 };
-
-export async function createExpense(
-  payload: CreateExpensePayload,
-  idempotencyKey: string,
-): Promise<Expense> {
-  const res = await fetch(`${BASE_URL}/expenses`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Idempotency-Key": idempotencyKey,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const body = (await res.json()) as ApiError;
-    throw new Error(body.error?.message ?? `Request failed: ${res.status}`);
-  }
-
-  return (await res.json()) as Expense;
-}
 
 export type CategorySummary = {
   category: string;
@@ -62,15 +33,17 @@ export type SummaryResponse = {
   grand_total_paise: number;
 };
 
+export async function createExpense(
+  payload: CreateExpensePayload,
+  idempotencyKey: string,
+): Promise<Expense> {
+  return httpPost<Expense>("/expenses", payload, {
+    "Idempotency-Key": idempotencyKey,
+  });
+}
+
 export async function fetchSummary(signal?: AbortSignal): Promise<SummaryResponse> {
-  const res = await fetch(`${BASE_URL}/expenses/summary`, { signal });
-
-  if (!res.ok) {
-    const body = (await res.json()) as ApiError;
-    throw new Error(body.error?.message ?? `Request failed: ${res.status}`);
-  }
-
-  return (await res.json()) as SummaryResponse;
+  return httpGet<SummaryResponse>("/expenses/summary", signal);
 }
 
 export async function fetchExpenses(params?: {
@@ -82,14 +55,8 @@ export async function fetchExpenses(params?: {
   if (params?.category) query.set("category", params.category);
   if (params?.sort) query.set("sort", params.sort);
   const qs = query.toString();
-  const url = `${BASE_URL}/expenses${qs ? `?${qs}` : ""}`;
-
-  const res = await fetch(url, { signal: params?.signal });
-
-  if (!res.ok) {
-    const body = (await res.json()) as ApiError;
-    throw new Error(body.error?.message ?? `Request failed: ${res.status}`);
-  }
-
-  return (await res.json()) as ExpensesResponse;
+  return httpGet<ExpensesResponse>(
+    `/expenses${qs ? `?${qs}` : ""}`,
+    params?.signal,
+  );
 }
