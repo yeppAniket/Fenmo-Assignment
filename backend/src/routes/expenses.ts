@@ -13,6 +13,43 @@ export function expenseRoutes(app: FastifyInstance, db: Database.Database) {
     SELECT * FROM expenses WHERE idempotency_key = ?
   `);
 
+  app.get("/expenses", async (request, reply) => {
+    const query = request.query as Record<string, string | undefined>;
+    const category = query.category?.trim() || null;
+    const sort = query.sort;
+
+    // Build query with parameterized WHERE clause
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (category) {
+      conditions.push("category = ?");
+      params.push(category);
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // Default sort: date DESC, created_at DESC
+    let orderBy = "date DESC, created_at DESC";
+    if (sort === "date_asc") {
+      orderBy = "date ASC, created_at ASC";
+    }
+
+    const rows = db.prepare(
+      `SELECT * FROM expenses ${where} ORDER BY ${orderBy}`
+    ).all(...params) as ExpenseRow[];
+
+    const totalRow = db.prepare(
+      `SELECT COALESCE(SUM(amount_paise), 0) as total FROM expenses ${where}`
+    ).get(...params) as { total: number };
+
+    return {
+      items: rows.map(formatExpense),
+      count: rows.length,
+      total_paise: totalRow.total,
+    };
+  });
+
   app.post("/expenses", async (request, reply) => {
     // 1. Require Idempotency-Key header
     const idempotencyKey = request.headers["idempotency-key"];

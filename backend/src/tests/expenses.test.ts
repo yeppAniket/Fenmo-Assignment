@@ -185,3 +185,163 @@ describe("POST /expenses", () => {
     expect(res.json().amount_paise).toBe(20000);
   });
 });
+
+// --- Helper to seed expenses ---
+async function seed(
+  app: FastifyInstance,
+  items: { amount: string; category: string; date: string; key: string; description?: string }[]
+) {
+  for (const item of items) {
+    await app.inject({
+      method: "POST",
+      url: "/expenses",
+      headers: { "idempotency-key": item.key },
+      payload: {
+        amount: item.amount,
+        category: item.category,
+        date: item.date,
+        description: item.description ?? "",
+      },
+    });
+  }
+}
+
+describe("GET /expenses", () => {
+  it("returns all expenses with count and total_paise", async () => {
+    await seed(app, [
+      { amount: "100.00", category: "Food", date: "2025-03-10", key: "g1" },
+      { amount: "50.50", category: "Transport", date: "2025-03-11", key: "g2" },
+    ]);
+
+    const res = await app.inject({ method: "GET", url: "/expenses" });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.count).toBe(2);
+    expect(body.total_paise).toBe(15050); // 10000 + 5050
+    expect(body.items).toHaveLength(2);
+  });
+
+  it("returns empty list when no expenses exist", async () => {
+    const res = await app.inject({ method: "GET", url: "/expenses" });
+
+    const body = res.json();
+    expect(body.count).toBe(0);
+    expect(body.total_paise).toBe(0);
+    expect(body.items).toHaveLength(0);
+  });
+
+  it("filters by category", async () => {
+    await seed(app, [
+      { amount: "100.00", category: "Food", date: "2025-03-10", key: "f1" },
+      { amount: "200.00", category: "Transport", date: "2025-03-11", key: "f2" },
+      { amount: "50.00", category: "Food", date: "2025-03-12", key: "f3" },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/expenses?category=Food",
+    });
+
+    const body = res.json();
+    expect(body.count).toBe(2);
+    expect(body.items.every((e: { category: string }) => e.category === "Food")).toBe(true);
+    expect(body.total_paise).toBe(15000); // 10000 + 5000
+  });
+
+  it("returns empty when filtering by non-existent category", async () => {
+    await seed(app, [
+      { amount: "100.00", category: "Food", date: "2025-03-10", key: "ne1" },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/expenses?category=Entertainment",
+    });
+
+    const body = res.json();
+    expect(body.count).toBe(0);
+    expect(body.total_paise).toBe(0);
+  });
+
+  it("sorts by date descending by default (newest first)", async () => {
+    await seed(app, [
+      { amount: "10.00", category: "Food", date: "2025-03-01", key: "s1" },
+      { amount: "20.00", category: "Food", date: "2025-03-15", key: "s2" },
+      { amount: "30.00", category: "Food", date: "2025-03-10", key: "s3" },
+    ]);
+
+    const res = await app.inject({ method: "GET", url: "/expenses" });
+    const dates = res.json().items.map((e: { date: string }) => e.date);
+
+    expect(dates).toEqual(["2025-03-15", "2025-03-10", "2025-03-01"]);
+  });
+
+  it("supports sort=date_desc explicitly", async () => {
+    await seed(app, [
+      { amount: "10.00", category: "Food", date: "2025-01-01", key: "sd1" },
+      { amount: "20.00", category: "Food", date: "2025-12-31", key: "sd2" },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/expenses?sort=date_desc",
+    });
+
+    const dates = res.json().items.map((e: { date: string }) => e.date);
+    expect(dates).toEqual(["2025-12-31", "2025-01-01"]);
+  });
+
+  it("supports sort=date_asc", async () => {
+    await seed(app, [
+      { amount: "10.00", category: "Food", date: "2025-03-15", key: "sa1" },
+      { amount: "20.00", category: "Food", date: "2025-03-01", key: "sa2" },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/expenses?sort=date_asc",
+    });
+
+    const dates = res.json().items.map((e: { date: string }) => e.date);
+    expect(dates).toEqual(["2025-03-01", "2025-03-15"]);
+  });
+
+  it("total_paise matches sum of returned items", async () => {
+    await seed(app, [
+      { amount: "33.33", category: "Food", date: "2025-03-10", key: "t1" },
+      { amount: "66.67", category: "Food", date: "2025-03-11", key: "t2" },
+      { amount: "100.00", category: "Transport", date: "2025-03-12", key: "t3" },
+    ]);
+
+    // Unfiltered
+    const all = await app.inject({ method: "GET", url: "/expenses" });
+    const allBody = all.json();
+    const allSum = allBody.items.reduce((s: number, e: { amount_paise: number }) => s + e.amount_paise, 0);
+    expect(allBody.total_paise).toBe(allSum);
+
+    // Filtered
+    const filtered = await app.inject({ method: "GET", url: "/expenses?category=Food" });
+    const filteredBody = filtered.json();
+    const filteredSum = filteredBody.items.reduce((s: number, e: { amount_paise: number }) => s + e.amount_paise, 0);
+    expect(filteredBody.total_paise).toBe(filteredSum);
+  });
+
+  it("filter + sort work together", async () => {
+    await seed(app, [
+      { amount: "10.00", category: "Food", date: "2025-03-01", key: "fs1" },
+      { amount: "20.00", category: "Transport", date: "2025-03-05", key: "fs2" },
+      { amount: "30.00", category: "Food", date: "2025-03-10", key: "fs3" },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/expenses?category=Food&sort=date_asc",
+    });
+
+    const body = res.json();
+    expect(body.count).toBe(2);
+    expect(body.items[0].date).toBe("2025-03-01");
+    expect(body.items[1].date).toBe("2025-03-10");
+  });
+});
