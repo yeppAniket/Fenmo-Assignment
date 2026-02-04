@@ -23,6 +23,34 @@ export type ApiError = {
   };
 };
 
+export type CreateExpensePayload = {
+  amount: string;
+  category: string;
+  description?: string;
+  date: string;
+};
+
+export async function createExpense(
+  payload: CreateExpensePayload,
+  idempotencyKey: string,
+): Promise<Expense> {
+  const res = await fetch(`${BASE_URL}/expenses`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const body = (await res.json()) as ApiError;
+    throw new Error(body.error?.message ?? `Request failed: ${res.status}`);
+  }
+
+  return (await res.json()) as Expense;
+}
+
 export async function fetchExpenses(params?: {
   category?: string;
   sort?: string;
