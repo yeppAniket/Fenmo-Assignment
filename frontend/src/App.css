@@ -617,6 +617,89 @@ body {
   font-size: 0.95rem;
 }
 
+/* User list */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #1e293b;
+  text-align: left;
+}
+
+.user-list-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.user-list-new {
+  border-style: dashed;
+  color: #64748b;
+}
+
+.user-list-new:hover {
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.user-avatar-new {
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 1.2rem;
+}
+
+.user-list-new:hover .user-avatar-new {
+  background: #ede9fe;
+  color: #4f46e5;
+}
+
+.user-list-name {
+  font-weight: 500;
+}
+
+.user-back-link {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0.25rem;
+  text-align: center;
+}
+
+.user-back-link:hover {
+  text-decoration: underline;
+}
+
 /* User badge in header */
 .app-header-user {
   display: flex;

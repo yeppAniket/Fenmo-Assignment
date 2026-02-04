@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchUsers } from "../api.ts";
 import { Button, Input } from "../ui/index.ts";
 
 const STORAGE_KEY = "fenmo_user";
@@ -16,8 +17,23 @@ type Props = {
 };
 
 export function UserSelector({ onUserSelected }: Props) {
+  const [existingUsers, setExistingUsers] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNewForm, setShowNewForm] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUsers()
+      .then((data) => setExistingUsers(data.users))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  function selectUser(user: string) {
+    storeUser(user);
+    onUserSelected(user);
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,9 +46,10 @@ export function UserSelector({ onUserSelected }: Props) {
       setError("Name must be 50 characters or less");
       return;
     }
-    storeUser(trimmed);
-    onUserSelected(trimmed);
+    selectUser(trimmed);
   }
+
+  const hasUsers = existingUsers.length > 0;
 
   return (
     <div className="user-selector-page">
@@ -40,22 +57,56 @@ export function UserSelector({ onUserSelected }: Props) {
         <div className="user-selector-header">
           <span className="user-selector-logo">{"\u20B9"}</span>
           <h1>Fenmo</h1>
-          <p>Enter your name to get started</p>
+          <p>{loading ? "Loading..." : "Select your account or create a new one"}</p>
         </div>
-        <form onSubmit={handleSubmit} className="user-selector-form">
-          <Input
-            id="user-name"
-            label="Your Name"
-            type="text"
-            placeholder="e.g. Rahul"
-            value={name}
-            onChange={(e) => { setName(e.target.value); setError(null); }}
-            error={error ?? undefined}
-            autoFocus
-            maxLength={50}
-          />
-          <Button type="submit">Continue</Button>
-        </form>
+
+        {!loading && hasUsers && !showNewForm && (
+          <div className="user-list">
+            {existingUsers.map((user) => (
+              <button
+                key={user}
+                className="user-list-item"
+                onClick={() => selectUser(user)}
+              >
+                <span className="user-avatar">{user[0].toUpperCase()}</span>
+                <span className="user-list-name">{user}</span>
+              </button>
+            ))}
+            <button
+              className="user-list-item user-list-new"
+              onClick={() => setShowNewForm(true)}
+            >
+              <span className="user-avatar user-avatar-new">+</span>
+              <span className="user-list-name">New user</span>
+            </button>
+          </div>
+        )}
+
+        {!loading && (!hasUsers || showNewForm) && (
+          <form onSubmit={handleSubmit} className="user-selector-form">
+            <Input
+              id="user-name"
+              label="Your Name"
+              type="text"
+              placeholder="e.g. Rahul"
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError(null); }}
+              error={error ?? undefined}
+              autoFocus
+              maxLength={50}
+            />
+            <Button type="submit">Continue</Button>
+            {hasUsers && (
+              <button
+                type="button"
+                className="user-back-link"
+                onClick={() => setShowNewForm(false)}
+              >
+                Back to user list
+              </button>
+            )}
+          </form>
+        )}
       </div>
     </div>
   );

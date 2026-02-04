@@ -43,6 +43,10 @@ export async function createExpense(
   });
 }
 
+export async function fetchUsers(): Promise<{ users: string[] }> {
+  return httpGet<{ users: string[] }>("/users");
+}
+
 export async function fetchSummary(user: string, signal?: AbortSignal): Promise<SummaryResponse> {
   const query = new URLSearchParams();
   if (user) query.set("user", user);
