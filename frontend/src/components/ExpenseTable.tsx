@@ -2,12 +2,26 @@ import type { Expense } from "../api.ts";
 
 function formatPaise(paise: number): string {
   const rupees = (paise / 100).toFixed(2);
-  return `₹${rupees}`;
+  return `\u20B9${rupees}`;
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function ExpenseTable({ items }: { items: Expense[] }) {
   if (items.length === 0) {
-    return <p className="empty-message">No expenses found.</p>;
+    return (
+      <div className="empty-message">
+        <span className="empty-icon">{"\uD83D\uDCB8"}</span>
+        <p>No expenses found. Add your first expense above!</p>
+      </div>
+    );
   }
 
   return (
@@ -25,9 +39,11 @@ export function ExpenseTable({ items }: { items: Expense[] }) {
         <tbody>
           {items.map((e) => (
             <tr key={e.id}>
-              <td>{e.date}</td>
-              <td>{e.category}</td>
-              <td>{e.description || "—"}</td>
+              <td className="expense-date">{formatDate(e.date)}</td>
+              <td><span className="expense-category-badge">{e.category}</span></td>
+              <td className={e.description ? "" : "expense-description"}>
+                {e.description || "\u2014"}
+              </td>
               <td className="amount-col">{formatPaise(e.amount_paise)}</td>
             </tr>
           ))}

@@ -87,6 +87,7 @@ export function ExpenseForm({ onCreated }: Props) {
 
   return (
     <form className="expense-form" onSubmit={handleSubmit} noValidate>
+      <div className="form-title">Add New Expense</div>
       <div className="form-row">
         <Input
           id="expense-amount"

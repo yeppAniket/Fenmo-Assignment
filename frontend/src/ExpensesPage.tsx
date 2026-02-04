@@ -84,45 +84,60 @@ export function ExpensesPage() {
     items.reduce((sum, e) => sum + e.amount_paise, 0);
 
   return (
-    <div className="expenses-page">
-      <h1>Expense Tracker</h1>
+    <>
+      <header className="app-header">
+        <div className="app-header-inner">
+          <h1>
+            <span className="app-header-logo">&#8377;</span>
+            Fenmo
+          </h1>
+          <span className="app-header-subtitle">Track your expenses</span>
+        </div>
+      </header>
 
-      {/* Screen-reader announcements for loading/error state changes */}
-      <div aria-live="polite" className="sr-only">
-        {loading ? "Loading expenses" : ""}
-        {error ? `Error: ${error}` : ""}
+      <div className="expenses-page">
+        {/* Screen-reader announcements for loading/error state changes */}
+        <div aria-live="polite" className="sr-only">
+          {loading ? "Loading expenses" : ""}
+          {error ? `Error: ${error}` : ""}
+        </div>
+
+        <PendingBanner onResolved={handleCreated} />
+
+        <ExpenseForm onCreated={handleCreated} />
+
+        <FilterSortControls
+          category={category}
+          onCategoryChange={setCategory}
+          sort={sort}
+          onSortChange={setSort}
+          categories={categories}
+        />
+
+        {loading && (
+          <div className="loading-spinner">
+            <div className="spinner" />
+            <span>Loading expenses...</span>
+          </div>
+        )}
+
+        {error && (
+          <Banner
+            variant="error"
+            action={<Button variant="danger" onClick={() => loadExpenses()}>Retry</Button>}
+          >
+            {error}
+          </Banner>
+        )}
+
+        {!loading && !error && (
+          <>
+            <TotalDisplay totalPaise={displayTotal} count={count} />
+            <CategorySummary categories={summaryItems} grandTotal={summaryGrandTotal} />
+            <ExpenseTable items={items} />
+          </>
+        )}
       </div>
-
-      <PendingBanner onResolved={handleCreated} />
-
-      <ExpenseForm onCreated={handleCreated} />
-
-      <FilterSortControls
-        category={category}
-        onCategoryChange={setCategory}
-        sort={sort}
-        onSortChange={setSort}
-        categories={categories}
-      />
-
-      {loading && <p className="status-message">Loading expenses...</p>}
-
-      {error && (
-        <Banner
-          variant="error"
-          action={<Button variant="danger" onClick={() => loadExpenses()}>Retry</Button>}
-        >
-          {error}
-        </Banner>
-      )}
-
-      {!loading && !error && (
-        <>
-          <TotalDisplay totalPaise={displayTotal} count={count} />
-          <CategorySummary categories={summaryItems} grandTotal={summaryGrandTotal} />
-          <ExpenseTable items={items} />
-        </>
-      )}
-    </div>
+    </>
   );
 }

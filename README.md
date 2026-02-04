@@ -11,6 +11,12 @@ Minimal full-stack expense tracker built for **production-like correctness** und
 | Testing | Vitest (20 integration tests) |
 | Monorepo | `backend/` and `frontend/` |
 
+## Frontend Roadmap
+
+The current UI is intentionally MVP. For a concrete, production-minded upgrade plan (UX, a11y, testing, architecture) see:
+- `frontend/FRONTEND_UPGRADE.md`
+- `frontend/FRONTEND_UPGRADE_PROMPT.md` (copy/paste prompt for implementation)
+
 ## How to Run Locally
 
 ```bash
